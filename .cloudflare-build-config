@@ -1,0 +1,13 @@
+# Cloudflare Pages Build Configuration
+
+# Build command
+npm install && npm run build
+
+# Build output directory
+dist
+
+# Node version
+NODE_VERSION=18
+
+# Environment variables (set these in Cloudflare Pages dashboard)
+# VITE_API_URL=your-backend-url
