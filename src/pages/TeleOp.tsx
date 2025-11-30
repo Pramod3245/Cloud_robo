@@ -1,9 +1,10 @@
 import { Layout } from "@/components/Layout";
 import { Maximize2, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, RotateCw, Home, Power, Download, RefreshCw } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import useCamera from "@/hooks/useCamera";
+import useRobot from "@/hooks/useRobot";
 
-function RealCameraFeed() {
+function RealCameraFeed({ isRecording, onToggleRecord }: { isRecording: boolean; onToggleRecord: () => void }) {
   const {
     videoRef,
     canvasRef,
@@ -33,6 +34,11 @@ function RealCameraFeed() {
 
       {/* small floating controls */}
       <div className="absolute top-3 right-3 flex gap-2 z-20">
+        <button onClick={onToggleRecord} className={`glass px-2 py-1 rounded-md ${isRecording ? "text-red-400" : ""}`} title="Record">
+          <div className={`w-4 h-4 rounded-full border-2 border-current flex items-center justify-center`}>
+            <div className={`w-2 h-2 rounded-full bg-current ${isRecording ? "animate-pulse" : "opacity-0"}`} />
+          </div>
+        </button>
         <button onClick={() => snapshot()} className="glass px-2 py-1 rounded-md" title="Snapshot">
           <Download className="w-4 h-4" />
         </button>
@@ -64,9 +70,48 @@ export default function TeleOp() {
     "14:02:08 – Connection established",
   ]);
 
+  const { robotState, sendControl, toggleCamera } = useRobot();
+
+  const handleToggleRecord = () => {
+    toggleCamera(undefined, !robotState.camera.is_recording);
+    addLog(robotState.camera.is_recording ? "Stopped recording" : "Started recording");
+  };
+
   const addLog = (message: string) => {
     const time = new Date().toLocaleTimeString();
     setLogs((prev) => [`${time} – ${message}`, ...prev].slice(0, 10));
+  };
+
+  const handleMove = (direction: string) => {
+    addLog(`Move ${direction}`);
+    const speedFactor = speed / 100;
+    let linear = 0;
+    let angular = 0;
+
+    switch (direction) {
+      case "forward":
+        linear = 1.0 * speedFactor;
+        break;
+      case "backward":
+        linear = -1.0 * speedFactor;
+        break;
+      case "left":
+        angular = 1.0 * speedFactor;
+        break;
+      case "right":
+        angular = -1.0 * speedFactor;
+        break;
+      case "stop":
+        linear = 0;
+        angular = 0;
+        break;
+    }
+    sendControl(linear, angular);
+  };
+
+  // Stop when releasing buttons (optional, but good for safety)
+  const handleStop = () => {
+    sendControl(0, 0);
   };
 
   return (
@@ -107,16 +152,27 @@ export default function TeleOp() {
                 <div className="absolute bottom-0 left-0 right-0 glass-strong p-4 flex items-center justify-between text-xs font-mono">
                   <span>FPS: 30</span>
                   <span>{new Date().toLocaleTimeString()}</span>
-                  <span>Latency: 24ms</span>
+                  <span>Latency: {robotState.health_details.latency.toFixed(0)}ms</span>
+                  <span>Bat: {robotState.battery.toFixed(1)}%</span>
+                  <span>Vel: {robotState.linear_velocity.toFixed(2)} m/s</span>
                 </div>
 
                 {/* Top info */}
-                <div className="absolute top-4 left-1/2 -translate-x-1/2 glass px-4 py-2 rounded-full text-xs font-mono">
-                  LIVE FEED
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 flex gap-2">
+                  <div className="glass px-4 py-2 rounded-full text-xs font-mono flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${robotState.camera.is_on ? "bg-green-500 animate-pulse" : "bg-red-500"}`} />
+                    LIVE FEED
+                  </div>
+                  {robotState.camera.is_recording && (
+                    <div className="glass px-4 py-2 rounded-full text-xs font-mono flex items-center gap-2 text-red-400">
+                      <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                      REC {robotState.camera.recording_time.toFixed(1)}s
+                    </div>
+                  )}
                 </div>
               </div>
               {/* Real camera feed (shared logic) */}
-              <RealCameraFeed />
+              <RealCameraFeed isRecording={robotState.camera.is_recording} onToggleRecord={handleToggleRecord} />
             </div>
 
             {/* Command Log */}
@@ -137,39 +193,47 @@ export default function TeleOp() {
             {/* Directional Controls */}
             <div className="glass rounded-2xl p-8">
               <h3 className="text-sm font-light mb-6 tracking-wide">MOVEMENT</h3>
-              
+
               <div className="grid grid-cols-3 gap-2 mb-6">
                 <div />
                 <button
-                  onClick={() => addLog("Move forward")}
+                  onMouseDown={() => handleMove("forward")}
+                  onMouseUp={handleStop}
+                  onMouseLeave={handleStop}
                   className="aspect-square glass-strong rounded-xl flex items-center justify-center transition-smooth hover:bg-foreground/10 active:scale-95"
                 >
                   <ArrowUp className="w-6 h-6" />
                 </button>
                 <div />
-                
+
                 <button
-                  onClick={() => addLog("Move left")}
+                  onMouseDown={() => handleMove("left")}
+                  onMouseUp={handleStop}
+                  onMouseLeave={handleStop}
                   className="aspect-square glass-strong rounded-xl flex items-center justify-center transition-smooth hover:bg-foreground/10 active:scale-95"
                 >
                   <ArrowLeft className="w-6 h-6" />
                 </button>
                 <button
-                  onClick={() => addLog("Emergency stop")}
+                  onClick={() => { addLog("Emergency stop"); handleStop(); }}
                   className="aspect-square glass-strong rounded-xl flex items-center justify-center transition-smooth hover:bg-foreground/10 active:scale-95"
                 >
                   <Power className="w-6 h-6" />
                 </button>
                 <button
-                  onClick={() => addLog("Move right")}
+                  onMouseDown={() => handleMove("right")}
+                  onMouseUp={handleStop}
+                  onMouseLeave={handleStop}
                   className="aspect-square glass-strong rounded-xl flex items-center justify-center transition-smooth hover:bg-foreground/10 active:scale-95"
                 >
                   <ArrowRight className="w-6 h-6" />
                 </button>
-                
+
                 <div />
                 <button
-                  onClick={() => addLog("Move backward")}
+                  onMouseDown={() => handleMove("backward")}
+                  onMouseUp={handleStop}
+                  onMouseLeave={handleStop}
                   className="aspect-square glass-strong rounded-xl flex items-center justify-center transition-smooth hover:bg-foreground/10 active:scale-95"
                 >
                   <ArrowDown className="w-6 h-6" />
@@ -197,17 +261,15 @@ export default function TeleOp() {
               <div className="relative glass-strong rounded-full p-1 flex mb-4">
                 <button
                   onClick={() => setMode("safe")}
-                  className={`flex-1 py-2 rounded-full text-xs font-light transition-smooth ${
-                    mode === "safe" ? "bg-foreground/10" : ""
-                  }`}
+                  className={`flex-1 py-2 rounded-full text-xs font-light transition-smooth ${mode === "safe" ? "bg-foreground/10" : ""
+                    }`}
                 >
                   Safe Mode
                 </button>
                 <button
                   onClick={() => setMode("manual")}
-                  className={`flex-1 py-2 rounded-full text-xs font-light transition-smooth ${
-                    mode === "manual" ? "bg-foreground/10" : ""
-                  }`}
+                  className={`flex-1 py-2 rounded-full text-xs font-light transition-smooth ${mode === "manual" ? "bg-foreground/10" : ""
+                    }`}
                 >
                   Manual
                 </button>
@@ -217,7 +279,7 @@ export default function TeleOp() {
             {/* Additional Controls */}
             <div className="glass rounded-2xl p-8 space-y-3">
               <h3 className="text-sm font-light mb-4 tracking-wide">ACTIONS</h3>
-              
+
               <button
                 onClick={() => addLog("Rotate 180°")}
                 className="w-full glass-strong rounded-xl py-3 transition-smooth hover:bg-foreground/10 flex items-center justify-center gap-2"

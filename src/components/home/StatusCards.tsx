@@ -1,13 +1,14 @@
 import { Activity, Battery, MapPin } from "lucide-react";
+import { RobotState } from "@/hooks/useRobot";
 
-export const StatusCards = () => {
+export const StatusCards = ({ robotState }: { robotState?: RobotState }) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       {/* Current Task */}
       <div className="glass rounded-2xl p-8 hover-lift">
         <Activity className="w-8 h-8 stroke-[1.5] opacity-40 mb-4" />
-        <p className="text-xs font-light opacity-60 mb-2">CURRENT TASK</p>
-        <h3 className="text-lg font-normal mb-2">Folding Laundry</h3>
+        <p className="text-xs font-light opacity-60 mb-2">CURRENT STATUS</p>
+        <h3 className="text-lg font-normal mb-2 capitalize">{robotState?.status ?? "Idle"}</h3>
         <div className="flex items-center gap-2">
           <div className="relative w-12 h-12">
             <svg className="w-12 h-12 transform -rotate-90">
@@ -49,16 +50,16 @@ export const StatusCards = () => {
       <div className="glass rounded-2xl p-8 hover-lift">
         <Battery className="w-8 h-8 stroke-[1.5] opacity-40 mb-4" />
         <p className="text-xs font-light opacity-60 mb-2">BATTERY</p>
-        <h3 className="text-3xl font-extralight mb-2">76%</h3>
-        <p className="text-xs font-light opacity-60">Charging</p>
-        <p className="text-xs font-light mt-2">~4.2 hrs runtime</p>
+        <h3 className="text-3xl font-extralight mb-2">{robotState?.battery.toFixed(0) ?? 0}%</h3>
+        <p className="text-xs font-light opacity-60">{robotState?.is_charging ? "Charging" : "Discharging"}</p>
+        <p className="text-xs font-light mt-2">~{((robotState?.battery ?? 0) / 20).toFixed(2)} hrs runtime</p>
       </div>
 
       {/* Environment */}
       <div className="glass rounded-2xl p-8 hover-lift">
         <MapPin className="w-8 h-8 stroke-[1.5] opacity-40 mb-4" />
         <p className="text-xs font-light opacity-60 mb-2">LOCATION</p>
-        <h3 className="text-lg font-normal mb-4">Living Room</h3>
+        <h3 className="text-lg font-normal mb-4">{robotState?.location_name || "Unknown"}</h3>
         <div className="flex gap-2">
           <div className="w-2 h-2 rounded-full bg-foreground/80" />
           <div className="w-2 h-2 rounded-full bg-foreground/40" />

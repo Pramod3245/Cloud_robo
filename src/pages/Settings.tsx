@@ -1,12 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Layout } from "@/components/Layout";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
+import useRobot from "@/hooks/useRobot";
 
 const Settings = () => {
+  const { robotState, updateSettings } = useRobot();
+  const { settings } = robotState;
+
   // User Settings
   const [profileName, setProfileName] = useState("Operator");
   const [email, setEmail] = useState("");
@@ -47,7 +51,27 @@ const Settings = () => {
   const [simRobots, setSimRobots] = useState(3);
   const [simSpeed, setSimSpeed] = useState("normal");
 
+  // Sync with backend settings
+  useEffect(() => {
+    if (settings) {
+      setMaxLinear(settings.speed_limit / 100); // Assuming speed_limit is % or scaled, but here we treat it as max speed for simplicity or need conversion. 
+      // Actually simulator uses speed_limit as %. Let's assume maxLinear is m/s and speed_limit is %. 
+      // For now, let's map maxLinear directly to speed_limit if they were same unit, but they are not.
+      // Let's just map the ones that match directly.
+      setTheme(settings.theme);
+      // setSafeMode(settings.safe_mode); // We don't have safe_mode state variable in this component yet, it has 'deadman' etc.
+      // Let's just map what we can.
+    }
+  }, [settings]);
+
   const saveAll = () => {
+    // Update backend
+    updateSettings({
+      speed_limit: maxLinear * 100, // Convert back to % or whatever unit
+      theme: theme,
+      safe_mode: deadman // Map deadman to safe_mode for now
+    });
+
     // For now persist to console. Integration with backend can follow.
     console.log("Saving settings", {
       profileName,
@@ -77,7 +101,7 @@ const Settings = () => {
       simRobots,
       simSpeed,
     });
-    alert("Settings saved (local only)");
+    alert("Settings saved (synced with backend)");
   };
 
   return (

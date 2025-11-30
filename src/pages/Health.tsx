@@ -1,7 +1,16 @@
 import { Layout } from "@/components/Layout";
 import { Activity, Clock, Wrench, AlertCircle } from "lucide-react";
+import useRobot from "@/hooks/useRobot";
 
 export default function Health() {
+  const { robotState } = useRobot();
+  const { health_details, battery, temperature } = robotState;
+
+  // Calculate an overall health score based on available metrics
+  const healthScore = Math.round(
+    (battery + (100 - health_details.cpu_load) + (100 - health_details.memory_usage)) / 3
+  );
+
   return (
     <Layout>
       <div>
@@ -23,19 +32,21 @@ export default function Health() {
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="4"
-                  strokeDasharray={`${2 * Math.PI * 56 * 0.87} ${2 * Math.PI * 56}`}
+                  strokeDasharray={`${2 * Math.PI * 56 * (healthScore / 100)} ${2 * Math.PI * 56}`}
                   strokeLinecap="round"
                 />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-3xl font-extralight">87%</span>
+                <span className="text-3xl font-extralight">{healthScore}%</span>
                 <span className="text-xs opacity-60">Health</span>
               </div>
             </div>
 
             <div>
               <h2 className="text-2xl font-light mb-2">System Health</h2>
-              <p className="text-sm font-light opacity-60">All systems operating within normal parameters</p>
+              <p className="text-sm font-light opacity-60">
+                {healthScore > 80 ? "All systems operating within normal parameters" : "System performance degraded"}
+              </p>
             </div>
 
             <div className="text-right space-y-2">
@@ -59,38 +70,35 @@ export default function Health() {
               <thead>
                 <tr className="border-b border-border/10">
                   <th className="text-left p-3 text-xs font-light opacity-60">COMPONENT</th>
-                  <th className="text-left p-3 text-xs font-light opacity-60">AGE</th>
-                  <th className="text-left p-3 text-xs font-light opacity-60">LIFE REMAINING</th>
+                  <th className="text-left p-3 text-xs font-light opacity-60">METRIC</th>
+                  <th className="text-left p-3 text-xs font-light opacity-60">STATUS</th>
                   <th className="text-left p-3 text-xs font-light opacity-60">RISK</th>
-                  <th className="text-left p-3 text-xs font-light opacity-60">REPLACE BY</th>
                 </tr>
               </thead>
               <tbody>
                 {[
-                  { name: "Left elbow motor", age: "8 months", life: 68, risk: "L", date: "2025-08" },
-                  { name: "Battery pack", age: "6 months", life: 82, risk: "L", date: "2026-02" },
-                  { name: "Vision sensors", age: "12 months", life: 55, risk: "M", date: "2025-06" },
-                  { name: "Wheel motors", age: "10 months", life: 72, risk: "L", date: "2025-10" },
-                  { name: "CPU module", age: "12 months", life: 88, risk: "L", date: "2027-01" },
+                  { name: "CPU Load", metric: `${health_details.cpu_load.toFixed(1)}%`, life: 100 - health_details.cpu_load, risk: health_details.cpu_load > 80 ? "H" : "L" },
+                  { name: "Memory Usage", metric: `${health_details.memory_usage.toFixed(1)}%`, life: 100 - health_details.memory_usage, risk: health_details.memory_usage > 80 ? "H" : "L" },
+                  { name: "Left Motor Temp", metric: `${health_details.motor_temp_l.toFixed(1)}°C`, life: 100 - (health_details.motor_temp_l / 2), risk: health_details.motor_temp_l > 60 ? "H" : "L" },
+                  { name: "Right Motor Temp", metric: `${health_details.motor_temp_r.toFixed(1)}°C`, life: 100 - (health_details.motor_temp_r / 2), risk: health_details.motor_temp_r > 60 ? "H" : "L" },
+                  { name: "Battery Temp", metric: `${health_details.battery_temp.toFixed(1)}°C`, life: 100 - (health_details.battery_temp / 2), risk: health_details.battery_temp > 50 ? "M" : "L" },
                 ].map((item, i) => (
                   <tr key={i} className="border-b border-border/5 hover:bg-foreground/3 transition-smooth">
                     <td className="p-3 text-sm font-light">{item.name}</td>
-                    <td className="p-3 text-sm font-light opacity-60">{item.age}</td>
+                    <td className="p-3 text-sm font-light opacity-60">{item.metric}</td>
                     <td className="p-3">
                       <div className="flex items-center gap-2">
                         <div className="w-32 h-2 bg-foreground/10 rounded-full overflow-hidden">
                           <div
                             className="h-full bg-foreground/40"
-                            style={{ width: `${item.life}%` }}
+                            style={{ width: `${Math.max(0, Math.min(100, item.life))}%` }}
                           />
                         </div>
-                        <span className="text-xs opacity-60">{item.life}%</span>
                       </div>
                     </td>
                     <td className="p-3">
-                      <span className="glass-strong px-2 py-1 rounded text-xs">{item.risk}</span>
+                      <span className={`glass-strong px-2 py-1 rounded text-xs ${item.risk === 'H' ? 'text-red-400' : 'text-foreground'}`}>{item.risk}</span>
                     </td>
-                    <td className="p-3 text-sm font-light opacity-60">{item.date}</td>
                   </tr>
                 ))}
               </tbody>

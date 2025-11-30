@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { TrendingUp } from "lucide-react";
+import { RobotState } from "@/hooks/useRobot";
 
 const tabs = ["Vitals", "Motion", "Alerts", "Energy"];
 
@@ -22,10 +23,13 @@ const MiniStat = ({ label, value }: { label: string; value: string }) => (
   </div>
 );
 
-export const HealthMetrics = () => {
+export const HealthMetrics = ({ robotState }: { robotState?: RobotState }) => {
   const [activeTab, setActiveTab] = useState(0);
 
-  const healthScore = 87;
+  // Calculate health score based on battery and temperature (mock logic)
+  const batteryScore = robotState ? robotState.battery : 100;
+  const tempScore = robotState ? Math.max(0, 100 - Math.abs(robotState.temperature - 35) * 2) : 100;
+  const healthScore = Math.round((batteryScore + tempScore) / 2);
   const healthTrend = "+3%";
 
   const ringColor = healthScore >= 80 ? COLORS.green : healthScore >= 40 ? COLORS.orange : COLORS.red;
@@ -118,12 +122,12 @@ export const HealthMetrics = () => {
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 flex-1 w-full">
-                  <MiniStat label="Battery Temp" value="36°C" />
+                  <MiniStat label="Battery Temp" value={`${robotState?.temperature.toFixed(1) ?? 35}°C`} />
                   <MiniStat label="CPU Temp" value="54°C" />
                   <MiniStat label="Motor Temp" value="42°C" />
                   <MiniStat label="Humidity" value="22%" />
                   <MiniStat label="Runtime" value="3d 4h" />
-                  <MiniStat label="Health" value="87%" />
+                  <MiniStat label="Health" value={`${healthScore}%`} />
                 </div>
               </div>
 
@@ -154,15 +158,15 @@ export const HealthMetrics = () => {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4 items-center">
               <div className="flex flex-col items-center">
                 <div className="text-xs text-[#7D7D7D]">Yaw</div>
-                <svg className="w-full max-w-[220px] h-8" viewBox="0 0 100 20"><path d="M0 12 Q25 6 50 8 T100 6" stroke={COLORS.blue} strokeWidth={1.2} fill="none"/></svg>
+                <svg className="w-full max-w-[220px] h-8" viewBox="0 0 100 20"><path d="M0 12 Q25 6 50 8 T100 6" stroke={COLORS.blue} strokeWidth={1.2} fill="none" /></svg>
               </div>
               <div className="flex flex-col items-center">
                 <div className="text-xs text-[#7D7D7D]">Pitch</div>
-                <svg className="w-full max-w-[220px] h-8" viewBox="0 0 100 20"><path d="M0 10 Q25 8 50 12 T100 9" stroke="#8E24AA" strokeWidth={1.2} fill="none"/></svg>
+                <svg className="w-full max-w-[220px] h-8" viewBox="0 0 100 20"><path d="M0 10 Q25 8 50 12 T100 9" stroke="#8E24AA" strokeWidth={1.2} fill="none" /></svg>
               </div>
               <div className="flex flex-col items-center">
                 <div className="text-xs text-[#7D7D7D]">Roll</div>
-                <svg className="w-full max-w-[220px] h-8" viewBox="0 0 100 20"><path d="M0 11 Q25 9 50 10 T100 8" stroke="#7E57C2" strokeWidth={1.2} fill="none"/></svg>
+                <svg className="w-full max-w-[220px] h-8" viewBox="0 0 100 20"><path d="M0 11 Q25 9 50 10 T100 8" stroke="#7E57C2" strokeWidth={1.2} fill="none" /></svg>
               </div>
             </div>
           </div>
@@ -196,9 +200,9 @@ export const HealthMetrics = () => {
               <div className="flex-1 max-w-2xl w-full">
                 <div className="text-xs text-[#7D7D7D]">Recent Alerts</div>
                 <ul className="mt-2 space-y-2 text-sm">
-                  <li className="flex items-center justify-between"><div><span className="text-[#7D7D7D]">12:02</span> <strong className="ml-2">Motor spike</strong></div> <span className="px-2 py-0.5 text-xs rounded ml-2" style={{background:COLORS.orange,color:'#fff'}}>Warning</span></li>
-                  <li className="flex items-center justify-between"><div><span className="text-[#7D7D7D]">11:40</span> <strong className="ml-2">Battery temp high</strong></div> <span className="px-2 py-0.5 text-xs rounded ml-2" style={{background:COLORS.red,color:'#fff'}}>Critical</span></li>
-                  <li className="flex items-center justify-between"><div><span className="text-[#7D7D7D]">11:12</span> <strong className="ml-2">Info: ping</strong></div> <span className="px-2 py-0.5 text-xs rounded ml-2" style={{background:COLORS.lightGrey,color:COLORS.black}}>Info</span></li>
+                  <li className="flex items-center justify-between"><div><span className="text-[#7D7D7D]">12:02</span> <strong className="ml-2">Motor spike</strong></div> <span className="px-2 py-0.5 text-xs rounded ml-2" style={{ background: COLORS.orange, color: '#fff' }}>Warning</span></li>
+                  <li className="flex items-center justify-between"><div><span className="text-[#7D7D7D]">11:40</span> <strong className="ml-2">Battery temp high</strong></div> <span className="px-2 py-0.5 text-xs rounded ml-2" style={{ background: COLORS.red, color: '#fff' }}>Critical</span></li>
+                  <li className="flex items-center justify-between"><div><span className="text-[#7D7D7D]">11:12</span> <strong className="ml-2">Info: ping</strong></div> <span className="px-2 py-0.5 text-xs rounded ml-2" style={{ background: COLORS.lightGrey, color: COLORS.black }}>Info</span></li>
                 </ul>
               </div>
             </div>
@@ -237,7 +241,7 @@ export const HealthMetrics = () => {
                 <div className="w-28 h-28 relative mt-2">
                   <svg viewBox="0 0 128 128" className="w-28 h-28 transform -rotate-90">
                     <circle cx="64" cy="64" r="56" fill="none" stroke="#e0e0e0" strokeWidth="8" />
-                    <circle cx="64" cy="64" r="56" fill="none" stroke={COLORS.green} strokeWidth="8" strokeDasharray={`${2*Math.PI*56*0.45} ${2*Math.PI*56}`} strokeLinecap="round" />
+                    <circle cx="64" cy="64" r="56" fill="none" stroke={COLORS.green} strokeWidth="8" strokeDasharray={`${2 * Math.PI * 56 * 0.45} ${2 * Math.PI * 56}`} strokeLinecap="round" />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center text-sm">
                     <div className="font-medium">3h 12m</div>

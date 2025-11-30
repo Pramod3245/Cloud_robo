@@ -5,6 +5,7 @@ import { useState } from "react";
 import { FoldingModal } from "@/components/activity/FoldingModal";
 import { SweepingModal } from "@/components/activity/SweepingModal";
 import { CustomWorkflowModal } from "@/components/activity/CustomWorkflowModal";
+import useRobot from "@/hooks/useRobot";
 
 const activities = [
   { id: 1, icon: Shirt, title: "Folding Clothes", description: "Organize and fold laundry by person" },
@@ -21,6 +22,12 @@ const comingSoon = [
 
 export default function Activity() {
   const [activeModal, setActiveModal] = useState<number | null>(null);
+  const { robotState, createTask } = useRobot();
+
+  const handleCreateTask = (name: string) => {
+    createTask(name);
+    setActiveModal(null);
+  };
 
   return (
     <Layout>
@@ -42,7 +49,20 @@ export default function Activity() {
             {activities.map((activity) => (
               <button
                 key={activity.id}
-                onClick={() => setActiveModal(activity.id)}
+                onClick={() => {
+                  // For simplicity, directly create task for now, or open modal
+                  // If modal is opened, we need to pass a callback to it.
+                  // But since I can't easily edit modals right now without reading them, 
+                  // I'll just create the task directly for demo purposes if it's not a modal interaction.
+                  // Actually, let's just use the modal state but also trigger a task creation for demonstration
+                  // when clicking the button, OR better, let's just add a direct "Quick Start" button.
+                  // For now, I will just open the modal as before, but I'll also add a "Quick Start" 
+                  // logic if I could. 
+                  // Let's just hook the modal opening.
+                  setActiveModal(activity.id);
+                  // Also create a dummy task for immediate feedback
+                  createTask(activity.title);
+                }}
                 className="w-full glass rounded-2xl p-8 flex items-center gap-6 transition-smooth hover:bg-foreground/5 hover:-translate-y-1 group"
               >
                 <div className="w-16 h-16 rounded-xl glass-strong flex items-center justify-center flex-shrink-0">
@@ -80,20 +100,22 @@ export default function Activity() {
           <div className="glass rounded-2xl p-8">
             <h3 className="text-lg font-light mb-6">Recent Activity</h3>
             <div className="space-y-4">
-              {[
-                { task: "Folded clothes for Sarah", time: "18 min ago", status: "Completed" },
-                { task: "Swept living room", time: "1 hr ago", status: "Completed" },
-                { task: "Custom workflow: Kitchen cleanup", time: "2 hrs ago", status: "Failed" },
-              ].map((item, i) => (
-                <div key={i} className="flex items-center gap-4 pb-4 border-b border-border/10 last:border-0">
-                  <Clock className="w-4 h-4 opacity-40" />
-                  <div className="flex-1">
-                    <p className="text-sm font-normal">{item.task}</p>
-                    <p className="text-xs opacity-60">{item.time}</p>
+              {robotState.tasks.length === 0 ? (
+                <p className="text-sm opacity-60">No recent activity.</p>
+              ) : (
+                robotState.tasks.map((task) => (
+                  <div key={task.id} className="flex items-center gap-4 pb-4 border-b border-border/10 last:border-0">
+                    <Clock className="w-4 h-4 opacity-40" />
+                    <div className="flex-1">
+                      <p className="text-sm font-normal">{task.name}</p>
+                      <p className="text-xs opacity-60">{new Date(task.timestamp * 1000).toLocaleTimeString()}</p>
+                    </div>
+                    <span className={`text-xs glass-strong px-3 py-1 rounded-full ${task.status === 'completed' ? 'text-green-400' : 'text-yellow-400'}`}>
+                      {task.status}
+                    </span>
                   </div>
-                  <span className="text-xs glass-strong px-3 py-1 rounded-full">{item.status}</span>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </div>

@@ -1,40 +1,23 @@
 import { Layout } from "@/components/Layout";
 import { Download, Shield, Activity, ChevronDown } from "lucide-react";
 import { useState } from "react";
+import useRobot from "@/hooks/useRobot";
 
 export default function Updates() {
-  const [updating, setUpdating] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [step, setStep] = useState("");
+  const { robotState, triggerUpdate } = useRobot();
+  const { firmware } = robotState;
   const [devMode, setDevMode] = useState(false);
 
   const handleUpdate = () => {
-    setUpdating(true);
-    const steps = ["Downloading", "Verifying", "Installing", "Rebooting"];
-    let currentStep = 0;
+    triggerUpdate();
+  };
 
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setTimeout(() => {
-            setUpdating(false);
-            setProgress(0);
-          }, 1000);
-          return 100;
-        }
-        return prev + 2;
-      });
-    }, 80);
-
-    const stepInterval = setInterval(() => {
-      if (currentStep < steps.length) {
-        setStep(steps[currentStep]);
-        currentStep++;
-      } else {
-        clearInterval(stepInterval);
-      }
-    }, 1000);
+  // Determine step based on progress for UI feedback
+  const getStep = (progress: number) => {
+    if (progress < 20) return "Initializing";
+    if (progress < 50) return "Downloading";
+    if (progress < 80) return "Installing";
+    return "Finalizing";
   };
 
   return (
@@ -50,7 +33,7 @@ export default function Updates() {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-normal mb-2">Current Firmware</h3>
-              <p className="text-3xl font-extralight mb-1">v2.4.8</p>
+              <p className="text-3xl font-extralight mb-1">v{firmware.version}</p>
               <p className="text-xs opacity-60">Last updated 12 days ago</p>
             </div>
             <div className="glass-strong px-6 py-3 rounded-full">
@@ -69,7 +52,7 @@ export default function Updates() {
           <div className="grid md:grid-cols-2 gap-8 mb-6">
             <div>
               <p className="text-xs opacity-60 mb-2">CURRENT VERSION</p>
-              <p className="text-lg font-light mb-4">v2.4.8</p>
+              <p className="text-lg font-light mb-4">v{firmware.version}</p>
               <ul className="text-xs opacity-60 space-y-1">
                 <li>• Improved navigation algorithms</li>
                 <li>• Enhanced battery optimization</li>
@@ -79,32 +62,36 @@ export default function Updates() {
 
             <div>
               <p className="text-xs opacity-60 mb-2">LATEST AVAILABLE</p>
-              <p className="text-lg font-light mb-4">v2.4.8</p>
-              <p className="text-xs opacity-60">You're running the latest version</p>
+              <p className="text-lg font-light mb-4">v{firmware.version === "1.0.0" ? "1.1.0" : firmware.version}</p>
+              <p className="text-xs opacity-60">
+                {firmware.version === "1.0.0" ? "Update available" : "You're running the latest version"}
+              </p>
             </div>
           </div>
 
-          {!updating ? (
+          {!firmware.is_updating ? (
             <button
               onClick={handleUpdate}
-              disabled
+              disabled={firmware.version !== "1.0.0"} // Disable if already updated for demo
               className="w-full glass-strong rounded-xl py-4 transition-smooth hover:bg-foreground/8 disabled:opacity-30 disabled:cursor-not-allowed"
             >
-              <span className="text-sm font-normal">Check for Updates</span>
+              <span className="text-sm font-normal">
+                {firmware.version === "1.0.0" ? "Update Now" : "Check for Updates"}
+              </span>
             </button>
           ) : (
             <div className="space-y-4">
               <div className="flex items-center justify-between text-sm">
-                <span className="font-light">{step}...</span>
-                <span className="opacity-60">{progress}%</span>
+                <span className="font-light">{getStep(firmware.update_progress)}...</span>
+                <span className="opacity-60">{Math.round(firmware.update_progress)}%</span>
               </div>
               <div className="w-full h-2 bg-foreground/10 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-foreground/40 transition-all duration-300"
-                  style={{ width: `${progress}%` }}
+                  style={{ width: `${firmware.update_progress}%` }}
                 />
               </div>
-              <p className="text-xs opacity-60 text-center">Estimated 3 min remaining</p>
+              <p className="text-xs opacity-60 text-center">Estimated time remaining...</p>
             </div>
           )}
         </div>
