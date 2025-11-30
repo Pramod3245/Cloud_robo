@@ -69,7 +69,7 @@ const useRobot = () => {
         is_charging: false,
         mode: 'safe',
         status: 'idle',
-        location_name: 'Unknown',
+        location_name: 'Living Room',
         tasks: [],
         camera: { is_on: true, is_recording: false, recording_time: 0 },
         health_details: { cpu_load: 0, memory_usage: 0, motor_temp_l: 0, motor_temp_r: 0, battery_temp: 0, latency: 0 },

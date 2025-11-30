@@ -59,7 +59,7 @@ export const StatusCards = ({ robotState }: { robotState?: RobotState }) => {
       <div className="glass rounded-2xl p-8 hover-lift">
         <MapPin className="w-8 h-8 stroke-[1.5] opacity-40 mb-4" />
         <p className="text-xs font-light opacity-60 mb-2">LOCATION</p>
-        <h3 className="text-lg font-normal mb-4">{robotState?.location_name || "Unknown"}</h3>
+        <h3 className="text-lg font-normal mb-4">{robotState?.location_name || "Living Room"}</h3>
         <div className="flex gap-2">
           <div className="w-2 h-2 rounded-full bg-foreground/80" />
           <div className="w-2 h-2 rounded-full bg-foreground/40" />
