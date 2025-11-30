@@ -1,0 +1,41 @@
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Index from "./pages/Index";
+import Activity from "./pages/Activity";
+import SelfHeal from "./pages/SelfHeal";
+import Kinematics from "./pages/Kinematics";
+import Health from "./pages/Health";
+import Updates from "./pages/Updates";
+import TeleOp from "./pages/TeleOp";
+import NotFound from "./pages/NotFound";
+import Settings from "./pages/Settings";
+
+const queryClient = new QueryClient();
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/activity" element={<Activity />} />
+          <Route path="/self-heal" element={<SelfHeal />} />
+          <Route path="/kinematics" element={<Kinematics />} />
+          <Route path="/health" element={<Health />} />
+          <Route path="/updates" element={<Updates />} />
+          <Route path="/tele-op" element={<TeleOp />} />
+          <Route path="/settings" element={<Settings />} />
+          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
+
+export default App;
